@@ -331,7 +331,7 @@ var JQueryGanttView;
                         var gb = block.data("block-data");
                         var inaccept = !!behavior.onBeginResize && !behavior.onBeginResize(gb, thiz, ui);
                         if (inaccept) {
-                            block.resizable("option", "disabled", true);
+                            block.mouseup();
                         }
                     },
                     resize: function (e, ui) {
@@ -347,7 +347,6 @@ var JQueryGanttView;
                         block.resizable("option", "disabled", false);
                         if (inaccept) {
                             gb.updateBlock();
-                            console.log("INaccept");
                         }
                         else {
                             gb.updateData();
@@ -364,8 +363,10 @@ var JQueryGanttView;
                         var block = jQuery(this);
                         var gb = block.data("block-data");
                         var inaccept = !!behavior.onBeginDrag && !behavior.onBeginDrag(gb, thiz, ui);
-                        if (inaccept)
-                            !$(this).data("disabledrag");
+                        if (inaccept) {
+                            $(document).trigger("mouseup");
+                        }
+                        // !$(this).data("disabledrag");
                     },
                     drag: function (e, ui) {
                         var block = jQuery(this);

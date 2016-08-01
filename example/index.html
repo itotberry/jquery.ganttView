@@ -41,23 +41,32 @@
 						console.log(data);
 						return true;
 					},
+					
+					onBeginResize: function (data) {
+						// return true means "accept"
+						if (data.data.name == "hoge2") {
+							return true;
+						}
+						return false;
+					},
+					onResizing: function (data) { 
+					},
 					onEndResize: function (data) {
 						if ((data.data.end - data.data.start) < 3 * 24 * 60 * 60 * 1000) {
 							data.data.end = JQueryGanttView.DateUtils.addDays(data.data.start, 3 - 1);
-							return false; // BUGGY
+							return false;
 						}
 						return true;
 					},
-					onResizing: function (data) { 
-						// var msg = "You resized an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
-						// $("#eventMessage").text(msg);
-						
-						return true;
+
+					onBeginDrag: function (data) {
+						// return true means "accept"
+						if (data.data.name == "hoge2") {
+							return true;
+						}
+						return false;
 					},
-					onDragging: function (data) { 
-						// var msg = "You dragged an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
-						// $("#eventMessage").text(msg);
-						return true;
+					onDragging: function (data) {
 					},
 					onEndDrag: function (data) {
 						var begin = new Date("2010/1/1");

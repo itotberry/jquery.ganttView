@@ -601,7 +601,7 @@ namespace JQueryGanttView {
 						let inaccept = !!behavior.onBeginResize && !behavior.onBeginResize(gb, thiz, ui);
 
 						if (inaccept) {
-							block.resizable("option", "disabled", true);
+							block.mouseup();
 						}
 					},
 					resize: function (e, ui) {
@@ -618,7 +618,6 @@ namespace JQueryGanttView {
 
 						if (inaccept) {
 							gb.updateBlock();
-							console.log("INaccept");
 						} else {
 							gb.updateData();
 							gb.updateBlock();
@@ -635,8 +634,11 @@ namespace JQueryGanttView {
 						let block = jQuery(this);
 						let gb = block.data("block-data") as GanttBlock;
 						let inaccept = !!behavior.onBeginDrag && !behavior.onBeginDrag(gb, thiz, ui);
-						if (inaccept)
-							!$(this).data("disabledrag");
+						if (inaccept) {
+							$(document).trigger("mouseup");
+							// block.trigger("mouseup");
+						}
+							// !$(this).data("disabledrag");
 					},
 					drag: function (e, ui) {
 						let block = jQuery(this);
