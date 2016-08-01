@@ -274,7 +274,6 @@ var JQueryGanttView;
                 .css("position", "relative")
                 .css("width", ((days * this.chart.opts.cellWidth) - 9) + "px")
                 .css("margin-left", offset * this.chart.opts.cellWidth + "px");
-            ;
             if (this.data.color) {
                 this.block.css("background-color", this.data.color);
             }
@@ -328,7 +327,8 @@ var JQueryGanttView;
                             // updates data from view
                             gb.updateData();
                         }
-                        gb.updateBlock();
+                        else
+                            gb.updateBlock();
                     },
                     stop: function (e, ui) {
                         var block = jQuery(this);
@@ -350,7 +350,8 @@ var JQueryGanttView;
                             // update data with view
                             gb.updateData();
                         }
-                        gb.updateBlock();
+                        else {
+                        }
                     },
                     stop: function (e, ui) {
                         var gb = $(this).data("block-data");

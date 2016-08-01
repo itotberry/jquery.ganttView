@@ -43,12 +43,18 @@
 					onResizing: function (data) { 
 						// var msg = "You resized an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
-						console.log(data);
+						if ((data.data.end - data.data.start) < 3 * 24 * 60 * 60 * 1000)
+							return false;
 						return true;
 					},
 					onDragging: function (data) { 
 						// var msg = "You dragged an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
+						console.log(data.data);
+						if (data.data.start < Date.parse("2010/1/5")) {
+							data.data.start = Date.parse("2010/1/5");
+							return false;
+						}
 						return true;
 					}
 				}

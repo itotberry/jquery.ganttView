@@ -497,7 +497,6 @@ namespace JQueryGanttView {
 				.css("position", "relative")
 				.css("width", ((days * this.chart.opts.cellWidth) - 9) + "px")
 				.css("margin-left", offset * this.chart.opts.cellWidth + "px");
-				;
 			if (this.data.color) {
 				this.block.css("background-color", this.data.color);
 			}
@@ -563,8 +562,8 @@ namespace JQueryGanttView {
 						if (accept) {
 							// updates data from view
 							gb.updateData();
-						}
-						gb.updateBlock();
+						} else
+							gb.updateBlock();
 					},
 					stop: function (e, ui) {
 						let block = jQuery(this);
@@ -587,8 +586,10 @@ namespace JQueryGanttView {
 						if (accept) {
 							// update data with view
 							gb.updateData();
+						} else {
+							// buggy
+							// gb.updateBlock();
 						}
-						gb.updateBlock();
 					},
 					stop: function (e, ui) {
 						let gb = $(this).data("block-data") as GanttBlock;
