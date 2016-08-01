@@ -117,15 +117,45 @@ declare namespace JQueryGanttView {
              */
             onClick?: jQueryGanttEventHandler<Behavior, JQueryEventObject, boolean>;
             /**
-             * event handler for dragging event
+             * fires when beginning of dragging
+             * if return value is True-like then inaccepts the user interactions.
              *
              * @see draggable
              */
-            onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>;
+            onBeginDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>;
             /**
-             * event handler for resize event
+             * fires when dragging
+             *
+             * @see draggable
              */
-            onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>;
+            onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, void>;
+            /**
+             * fires when final timing of dragging.
+             * if return value is True-like then inaccepts the user interactions.
+             *
+             * @see draggable
+             */
+            onEndDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>;
+            /**
+             * fires when beginning of resizing event.
+             * if return value is True-like then inaccepts the user interactions.
+             *
+             * @see resizable
+             */
+            onBeginResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>;
+            /**
+             * fires when resizing
+             *
+             * @see resizable
+             */
+            onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, void>;
+            /**
+             * fires when final timing of resizing.
+             * if return value is True-like then inaccepts the user interactions.
+             *
+             * @see resizable
+             */
+            onEndResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>;
         };
     }
     /**

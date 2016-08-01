@@ -145,16 +145,50 @@ namespace JQueryGanttView {
 			onClick?: jQueryGanttEventHandler<Behavior, JQueryEventObject, boolean>,
 
 			/**
-			 * event handler for dragging event
+			 * fires when beginning of dragging
+			 * if return value is True-like then inaccepts the user interactions.
 			 * 
 			 * @see draggable
 			 */
-			onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>,
+			onBeginDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>,
 
 			/**
-			 * event handler for resize event
+			 * fires when dragging
+			 * 
+			 * @see draggable
 			 */
-			onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>,
+			onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, void>,
+
+			/**
+			 * fires when final timing of dragging.
+			 * if return value is True-like then inaccepts the user interactions.
+			 * 
+			 * @see draggable
+			 */
+			onEndDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>,
+
+			/**
+			 * fires when beginning of resizing event.
+			 * if return value is True-like then inaccepts the user interactions.
+			 * 
+			 * @see resizable
+			 */
+			onBeginResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>,
+
+			/**
+			 * fires when resizing
+			 * 
+			 * @see resizable
+			 */
+			onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, void>,
+
+			/**
+			 * fires when final timing of resizing.
+			 * if return value is True-like then inaccepts the user interactions.
+			 * 
+			 * @see resizable
+			 */
+			onEndResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>,
 
 		}
 	}
@@ -550,10 +584,10 @@ namespace JQueryGanttView {
 			let opts = this.opts;
 			let behavior = this.opts.behavior;
 			if (behavior.clickable) {
-				jQuery("div", this.container).on("click", ".ganttview-block", function (e) {
+				this.container.on("click", "div .ganttview-block", function (e) {
 					let block = jQuery(this);
 					let gb = block.data("block-data") as GanttBlock;
-					let accept = !behavior.onClick || !!behavior.onClick(gb, thiz, e);
+					!!behavior.onClick && !behavior.onClick(gb, thiz, e);
 				});
 			}
 
@@ -561,23 +595,34 @@ namespace JQueryGanttView {
 				jQuery("div .ganttview-block", this.container).resizable({
 					grid: opts.cellWidth,
 					handles: "e,w",
-					// start: function (e, ui) {},
+					start: function (e, ui) {
+						let block = jQuery(this);
+						let gb = block.data("block-data") as GanttBlock;
+						let inaccept = !!behavior.onBeginResize && !behavior.onBeginResize(gb, thiz, ui);
+
+						if (inaccept) {
+							block.resizable("option", "disabled", true);
+						}
+					},
 					resize: function (e, ui) {
 						let block = jQuery(this);
 						let gb = block.data("block-data") as GanttBlock;
-						let accept = !behavior.onResizing || !!behavior.onResizing(gb, thiz, ui);
-						
-						if (accept) {
-							// updates data from view
-							gb.updateData();
-						} else
-							gb.updateBlock();
+						!!behavior.onResizing && !behavior.onResizing(gb, thiz, ui);
+						gb.updateData();
 					},
 					stop: function (e, ui) {
 						let block = jQuery(this);
 						let gb = block.data("block-data") as GanttBlock;
-						gb.updateData();
-						gb.updateBlock();
+						let inaccept = !!behavior.onEndResize && !behavior.onEndResize(gb, thiz, ui);
+						block.resizable("option", "disabled", false);
+
+						if (inaccept) {
+							gb.updateBlock();
+							console.log("INaccept");
+						} else {
+							gb.updateData();
+							gb.updateBlock();
+						}
 					}
 				});
 			}
@@ -586,23 +631,28 @@ namespace JQueryGanttView {
 				jQuery("div .ganttview-block", this.container).draggable({
 					axis: "x",
 					grid: [opts.cellWidth, opts.cellWidth],
+					start: function (e, ui) {
+						let block = jQuery(this);
+						let gb = block.data("block-data") as GanttBlock;
+						let inaccept = !!behavior.onBeginDrag && !behavior.onBeginDrag(gb, thiz, ui);
+						if (inaccept)
+							!$(this).data("disabledrag");
+					},
 					drag: function (e, ui) {
 						let block = jQuery(this);
 						let gb = block.data("block-data") as GanttBlock;
-						let accept = !behavior.onDragging || !!behavior.onDragging(gb, thiz, ui);
-
-						if (accept) {
-							// update data with view
-							gb.updateData();
-						} else {
-							// buggy
-							// gb.updateBlock();
-						}
+						!!behavior.onDragging && !behavior.onDragging(gb, thiz, ui);
+						gb.updateData();
 					},
 					stop: function (e, ui) {
 						let gb = $(this).data("block-data") as GanttBlock;
-						gb.updateData();
-						gb.updateBlock();
+						let inaccept = !!behavior.onEndDrag && !behavior.onEndDrag(gb, thiz, ui);
+						if (inaccept) {
+							gb.updateBlock();
+						} else {
+							gb.updateData();
+							gb.updateBlock();
+						}
 					}
 				});
 			}

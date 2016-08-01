@@ -316,33 +316,43 @@ var JQueryGanttView;
             var opts = this.opts;
             var behavior = this.opts.behavior;
             if (behavior.clickable) {
-                jQuery("div", this.container).on("click", ".ganttview-block", function (e) {
+                this.container.on("click", "div .ganttview-block", function (e) {
                     var block = jQuery(this);
                     var gb = block.data("block-data");
-                    var accept = !behavior.onClick || !!behavior.onClick(gb, thiz, e);
+                    !!behavior.onClick && !behavior.onClick(gb, thiz, e);
                 });
             }
             if (behavior.resizable) {
                 jQuery("div .ganttview-block", this.container).resizable({
                     grid: opts.cellWidth,
                     handles: "e,w",
-                    // start: function (e, ui) {},
+                    start: function (e, ui) {
+                        var block = jQuery(this);
+                        var gb = block.data("block-data");
+                        var inaccept = !!behavior.onBeginResize && !behavior.onBeginResize(gb, thiz, ui);
+                        if (inaccept) {
+                            block.resizable("option", "disabled", true);
+                        }
+                    },
                     resize: function (e, ui) {
                         var block = jQuery(this);
                         var gb = block.data("block-data");
-                        var accept = !behavior.onResizing || !!behavior.onResizing(gb, thiz, ui);
-                        if (accept) {
-                            // updates data from view
-                            gb.updateData();
-                        }
-                        else
-                            gb.updateBlock();
+                        !!behavior.onResizing && !behavior.onResizing(gb, thiz, ui);
+                        gb.updateData();
                     },
                     stop: function (e, ui) {
                         var block = jQuery(this);
                         var gb = block.data("block-data");
-                        gb.updateData();
-                        gb.updateBlock();
+                        var inaccept = !!behavior.onEndResize && !behavior.onEndResize(gb, thiz, ui);
+                        block.resizable("option", "disabled", false);
+                        if (inaccept) {
+                            gb.updateBlock();
+                            console.log("INaccept");
+                        }
+                        else {
+                            gb.updateData();
+                            gb.updateBlock();
+                        }
                     }
                 });
             }
@@ -350,21 +360,29 @@ var JQueryGanttView;
                 jQuery("div .ganttview-block", this.container).draggable({
                     axis: "x",
                     grid: [opts.cellWidth, opts.cellWidth],
+                    start: function (e, ui) {
+                        var block = jQuery(this);
+                        var gb = block.data("block-data");
+                        var inaccept = !!behavior.onBeginDrag && !behavior.onBeginDrag(gb, thiz, ui);
+                        if (inaccept)
+                            !$(this).data("disabledrag");
+                    },
                     drag: function (e, ui) {
                         var block = jQuery(this);
                         var gb = block.data("block-data");
-                        var accept = !behavior.onDragging || !!behavior.onDragging(gb, thiz, ui);
-                        if (accept) {
-                            // update data with view
-                            gb.updateData();
-                        }
-                        else {
-                        }
+                        !!behavior.onDragging && !behavior.onDragging(gb, thiz, ui);
+                        gb.updateData();
                     },
                     stop: function (e, ui) {
                         var gb = $(this).data("block-data");
-                        gb.updateData();
-                        gb.updateBlock();
+                        var inaccept = !!behavior.onEndDrag && !behavior.onEndDrag(gb, thiz, ui);
+                        if (inaccept) {
+                            gb.updateBlock();
+                        }
+                        else {
+                            gb.updateData();
+                            gb.updateBlock();
+                        }
                     }
                 });
             }

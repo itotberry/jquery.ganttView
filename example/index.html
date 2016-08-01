@@ -38,19 +38,34 @@
 					onClick: function (data) { 
 						// var msg = "You clicked on an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
+						console.log(data);
+						return true;
+					},
+					onEndResize: function (data) {
+						if ((data.data.end - data.data.start) < 3 * 24 * 60 * 60 * 1000) {
+							data.data.end = JQueryGanttView.DateUtils.addDays(data.data.start, 3 - 1);
+							return false; // BUGGY
+						}
 						return true;
 					},
 					onResizing: function (data) { 
 						// var msg = "You resized an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
-						// if ((data.data.end - data.data.start) < 3 * 24 * 60 * 60 * 1000)
-						// 	return false; // BUGGY
+						
 						return true;
 					},
 					onDragging: function (data) { 
 						// var msg = "You dragged an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
 						return true;
+					},
+					onEndDrag: function (data) {
+						var begin = new Date("2010/1/1");
+						if (data.data.start < begin) {
+							var diffDays = JQueryGanttView.DateUtils.daysBetween(data.data.start, data.data.end);
+							data.data.start = begin;
+							data.data.end = JQueryGanttView.DateUtils.addDays(begin, diffDays);
+						}
 					}
 				}
 			});
