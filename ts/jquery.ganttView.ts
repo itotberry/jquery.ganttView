@@ -384,6 +384,8 @@ namespace JQueryGanttView {
 					continue;
 				for (let im = 0; im < y.length; im++) {
 					let m = y[im];
+					if (m === undefined)
+						continue;
 					let w = m.length * cellWidth;
 					totalW = totalW + w;
 					monthsDiv.append(jQuery("<div>", {
@@ -391,6 +393,8 @@ namespace JQueryGanttView {
 						"css": { "width": (w - 1) + "px" }
 					}).append(Chart.monthNames[im] + "/" + iy));
 					for (let d of m) {
+						if (d === undefined)
+							continue;
 						daysDiv.append(jQuery("<div>", { "class": "ganttview-hzheader-day" })
 							.append(d.getDate() as any));
 					}
@@ -411,7 +415,11 @@ namespace JQueryGanttView {
 				if (y === undefined)
 					continue;
 				for (let m of y) {
+					if (m === undefined)
+						continue;
 					for (let d of m) {
+						if (d === undefined)
+							continue;
 						let cellDiv = jQuery("<div>", { "class": "ganttview-grid-row-cell" });
 						if (DateUtils.isWeekend(d) && showWeekends) {
 							cellDiv.addClass("ganttview-weekend");

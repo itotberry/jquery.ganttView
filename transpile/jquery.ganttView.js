@@ -170,6 +170,8 @@ var JQueryGanttView;
                     continue;
                 for (var im = 0; im < y.length; im++) {
                     var m = y[im];
+                    if (m === undefined)
+                        continue;
                     var w = m.length * cellWidth;
                     totalW = totalW + w;
                     monthsDiv.append(jQuery("<div>", {
@@ -178,6 +180,8 @@ var JQueryGanttView;
                     }).append(Chart.monthNames[im] + "/" + iy));
                     for (var _i = 0, m_1 = m; _i < m_1.length; _i++) {
                         var d = m_1[_i];
+                        if (d === undefined)
+                            continue;
                         daysDiv.append(jQuery("<div>", { "class": "ganttview-hzheader-day" })
                             .append(d.getDate()));
                     }
@@ -199,8 +203,12 @@ var JQueryGanttView;
                     continue;
                 for (var _a = 0, y_1 = y; _a < y_1.length; _a++) {
                     var m = y_1[_a];
+                    if (m === undefined)
+                        continue;
                     for (var _b = 0, m_2 = m; _b < m_2.length; _b++) {
                         var d = m_2[_b];
+                        if (d === undefined)
+                            continue;
                         var cellDiv = jQuery("<div>", { "class": "ganttview-grid-row-cell" });
                         if (DateUtils.isWeekend(d) && showWeekends) {
                             cellDiv.addClass("ganttview-weekend");

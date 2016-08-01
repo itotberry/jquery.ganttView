@@ -1,6 +1,7 @@
 var ganttData = [
 	{
 		id: 1, name: "Feature 1", series: [
+			{ name: "hoge", start: new Date(2010,00,01), end: new Date(2010,00,03), labelHtml: function (days) { return "DAYS " + days; } },
 			{ name: "Planned", start: new Date(2010,00,01), end: new Date(2010,00,03), labelHtml: function (days) { return "DAYS " + days; } },
 			{ name: "Actual", start: new Date(2010,00,02), end: new Date(2010,00,05), color: "#f0f0f0" }
 		]
