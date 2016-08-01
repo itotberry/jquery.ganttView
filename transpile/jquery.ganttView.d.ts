@@ -24,7 +24,7 @@ interface JQuery {
  * Generic eventhandler function interface
  */
 interface jQueryGanttEventHandler<S, A, R> {
-    (data: JQueryGanttView.GanttElement, source: S, arg: A): R;
+    (data: JQueryGanttView.GanttBlock, source: S, arg: A): R;
 }
 /**
  * jquery.ganttView:
@@ -117,25 +117,16 @@ declare namespace JQueryGanttView {
              */
             onClick?: jQueryGanttEventHandler<Behavior, JQueryEventObject, boolean>;
             /**
-             * event handler for drag event
+             * event handler for dragging event
              *
              * @see draggable
              */
-            onDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>;
+            onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>;
             /**
              * event handler for resize event
              */
-            onResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>;
+            onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>;
         };
-    }
-    /**
-     * generic function interface for gantt chart events.
-     *
-     *
-     * forms: (charts, data_parent: GanttChartData, data_elm: GanttElement): void
-     */
-    interface GanttEventHandler {
-        (chart: any, group: GanttGroup, element: GanttElement): void;
     }
     /**
      * represents groups of GanttElement
@@ -158,6 +149,16 @@ declare namespace JQueryGanttView {
          * (optional) color of the chart
          */
         color?: string;
+        /**
+         * getter for "title" text of the gantt parts.
+         * this text is used for .ganttview-block element's title attributes
+         */
+        titleText?: (days: number) => string;
+        /**
+         * getter for "label" text of the gantt parts.
+         * this text is used for .ganttview-block-text inner text
+         */
+        labelHtml?: (days: number) => string;
     }
     class SimpleDataElement implements GanttElement {
         name: string;
@@ -180,8 +181,8 @@ declare namespace JQueryGanttView {
     class Chart implements Duration {
         static monthNames: string[];
         private div;
-        private slideDiv;
-        private opts;
+        slideDiv: JQuery;
+        opts: JQueryGanttView.ChartOptions;
         start: Date;
         end: Date;
         constructor(div: JQuery, opts: JQueryGanttView.ChartOptions);
@@ -191,23 +192,25 @@ declare namespace JQueryGanttView {
         private addGrid(dates);
         private addBlockContainers();
         private addBlocks();
-        private addBlockData(block, data, series);
         private applyLastClass(div);
+    }
+    class GanttBlock {
+        chart: Chart;
+        block: JQuery;
+        data: GanttElement;
+        constructor(chart: Chart, parts: JQuery, data: GanttElement);
+        updateBlock(): void;
+        updateData(): void;
     }
     /**
      * Behavior
      */
     class Behavior {
         private dates;
-        private div;
+        private container;
         private opts;
         constructor(dates: Duration, div: JQuery, opts: JQueryGanttView.ChartOptions);
         apply(): void;
-        private offsetFor(block);
-        private viewLengthToDays(viewLength);
-        private daysToViewLength(days);
-        private offsetToDate(offset);
-        private updateDataAndPosition(block);
     }
     class ArrayUtils {
         static contains<T>(arr: Array<T>, obj: T): boolean;

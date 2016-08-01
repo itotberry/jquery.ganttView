@@ -2,6 +2,8 @@
 jQuery.ganttView v.0.8.8
 Copyright (c) 2010 JC Grubbs - jc.grubbs@devmynd.com
 MIT License Applies
+
+compile with tsc over 1.8.10
 */
 
 /// <reference path="./jquery.d.ts" />
@@ -34,7 +36,7 @@ interface JQuery {
  * Generic eventhandler function interface
  */
 interface jQueryGanttEventHandler<S, A, R> {
-	(data: JQueryGanttView.GanttElement, source: S, arg: A): R;
+	(data: JQueryGanttView.GanttBlock, source: S, arg: A): R;
 }
 
 /**
@@ -143,28 +145,18 @@ namespace JQueryGanttView {
 			onClick?: jQueryGanttEventHandler<Behavior, JQueryEventObject, boolean>,
 
 			/**
-			 * event handler for drag event
+			 * event handler for dragging event
 			 * 
 			 * @see draggable
 			 */
-			onDrag?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>,
+			onDragging?: jQueryGanttEventHandler<Behavior, JQueryUI.DraggableEventUIParams, boolean>,
 
 			/**
 			 * event handler for resize event
 			 */
-			onResize?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>,
+			onResizing?: jQueryGanttEventHandler<Behavior, JQueryUI.ResizableUIParams, boolean>,
 
 		}
-	}
-
-	/**
-	 * generic function interface for gantt chart events.
-	 * 
-	 * 
-	 * forms: (charts, data_parent: GanttChartData, data_elm: GanttElement): void
-	 */
-	export interface GanttEventHandler {
-		(chart, group: GanttGroup, element: GanttElement): void
 	}
 
 	/**
@@ -191,6 +183,18 @@ namespace JQueryGanttView {
 		 * (optional) color of the chart
 		 */
 		color?: string;
+
+		/**
+		 * getter for "title" text of the gantt parts.
+		 * this text is used for .ganttview-block element's title attributes
+		 */
+		titleText?: (days: number) => string;
+
+		/**
+		 * getter for "label" text of the gantt parts.
+		 * this text is used for .ganttview-block-text inner text
+		 */
+		labelHtml?: (days: number) => string;
 	}
 
 	export class SimpleDataElement implements GanttElement {
@@ -215,7 +219,6 @@ namespace JQueryGanttView {
 		public addOffset(offset: number) {
 			this.start = new Date(this.start.getTime() + offset);
 			this.end = new Date(this.end.getTime() + offset);
-
 		}
 
 	}
@@ -233,8 +236,8 @@ namespace JQueryGanttView {
 
 	function build(options: JQueryGanttView.ChartOptions) {
 
-		var els = this;
-        var defaults = {
+		let els: JQuery = this;
+        let defaults = {
             showWeekends: true,
             cellWidth: 21,
             cellHeight: 31,
@@ -247,7 +250,20 @@ namespace JQueryGanttView {
             }
         };
 
-        var opts: JQueryGanttView.ChartOptions = jQuery.extend(true, defaults, options);
+        //let opts: JQueryGanttView.ChartOptions = jQuery.extend(true, defaults, options);
+		function _extends(d: any, b: any) {
+			for (let prop in b)
+				if (b.hasOwnProperty(prop)) {
+					if (typeof (b[prop]) === "object") {
+						if (d[prop] === undefined)
+							d[prop] = {};
+						_extends(d[prop], b[prop]);
+					} else if (d[prop] === undefined)
+						d[prop] = b[prop];
+				}
+			return d;
+		}
+		let opts = _extends(options, defaults);
 
 		if (opts.data) {
 			build();
@@ -257,13 +273,13 @@ namespace JQueryGanttView {
 
 		function build() {
 			els.each(function () {
-				var container = jQuery(this);
-				var div = jQuery("<div>", { "class": "ganttview" });
+				let container = jQuery(this);
+				let div = jQuery("<div>", { "class": "ganttview" });
 				let chart = new Chart(div, opts);
 				chart.render();
 				container.append(div);
 
-				var w = jQuery("div.ganttview-vtheader", container).outerWidth() +
+				let w = jQuery("div.ganttview-vtheader", container).outerWidth() +
 					jQuery("div.ganttview-slide-container", container).outerWidth();
 				container.css("width", (w + 2) + "px");
 
@@ -275,9 +291,9 @@ namespace JQueryGanttView {
 	function handleMethod(method: jQueryGanttViewMethods, ...params: any[]) {
 
 		if (method == "setSlideWidth") {
-			var div = $("div.ganttview", this);
+			let div = $("div.ganttview", this);
 			div.each(function () {
-				var vtWidth = $("div.ganttview-vtheader", div).outerWidth();
+				let vtWidth = $("div.ganttview-vtheader", div).outerWidth();
 				$(div).width(vtWidth + params[0] + 1);
 				$("div.ganttview-slide-container", this).width(params[0]);
 			});
@@ -298,9 +314,9 @@ namespace JQueryGanttView {
 
 		private div: JQuery;
 
-		private slideDiv: JQuery;
+		public slideDiv: JQuery;
 
-		private opts: JQueryGanttView.ChartOptions;
+		public opts: JQueryGanttView.ChartOptions;
 
 		public start: Date;
 
@@ -325,6 +341,7 @@ namespace JQueryGanttView {
             });
 
             let dates = DateUtils.getDates(this.start, this.end);
+			
             this.addHzHeader(dates);
             this.addGrid(dates);
             this.addBlockContainers();
@@ -338,16 +355,16 @@ namespace JQueryGanttView {
 			let data = this.opts.data;
 			let cellHeight = this.opts.cellHeight;
             let headerDiv = jQuery("<div>", { "class": "ganttview-vtheader" });
-            for (let i = 0; i < data.length; i++) {
+			for (let d of data) {
                 let itemDiv = jQuery("<div>", { "class": "ganttview-vtheader-item" });
                 itemDiv.append(jQuery("<div>", {
                     "class": "ganttview-vtheader-item-name",
-                    "css": { "height": (data[i].series.length * cellHeight) + "px" }
-                }).append(data[i].name));
+                    "css": { "height": (d.series.length * cellHeight) + "px" }
+                }).append(d.name));
                 let seriesDiv = jQuery("<div>", { "class": "ganttview-vtheader-series" });
-                for (let j = 0; j < data[i].series.length; j++) {
+				for (let s of d.series) {
                     seriesDiv.append(jQuery("<div>", { "class": "ganttview-vtheader-series-name" })
-						.append(data[i].series[j].name));
+						.append(s.name));
                 }
                 itemDiv.append(seriesDiv);
                 headerDiv.append(itemDiv);
@@ -361,48 +378,53 @@ namespace JQueryGanttView {
             let monthsDiv = jQuery("<div>", { "class": "ganttview-hzheader-months" });
             let daysDiv = jQuery("<div>", { "class": "ganttview-hzheader-days" });
             let totalW = 0;
-			for (var y in dates) {
-				for (var m in dates[y]) {
-					var w = dates[y][m].length * cellWidth;
+			for (let iy = 0; iy < dates.length; iy++) {
+				let y = dates[iy];
+				if (y === undefined)
+					continue;
+				for (let im = 0; im < y.length; im++) {
+					let m = y[im];
+					let w = m.length * cellWidth;
 					totalW = totalW + w;
 					monthsDiv.append(jQuery("<div>", {
 						"class": "ganttview-hzheader-month",
 						"css": { "width": (w - 1) + "px" }
-					}).append(Chart.monthNames[m] + "/" + y));
-					for (var d in dates[y][m]) {
+					}).append(Chart.monthNames[im] + "/" + iy));
+					for (let d of m) {
 						daysDiv.append(jQuery("<div>", { "class": "ganttview-hzheader-day" })
-							.append(dates[y][m][d].getDate().toString()));
+							.append(d.getDate() as any));
 					}
 				}
 			}
             monthsDiv.css("width", totalW + "px");
             daysDiv.css("width", totalW + "px");
             headerDiv.append(monthsDiv).append(daysDiv);
-            this.slideDiv.append(headerDiv);
+			this.slideDiv.append(headerDiv);
         }
 
 		private addGrid(dates: DateMatrix) {
 			let data = this.opts.data;
-			let slideWidth = this.opts.slideWidth;
 			let showWeekends = this.opts.showWeekends;
-            var gridDiv = jQuery("<div>", { "class": "ganttview-grid" });
-            var rowDiv = jQuery("<div>", { "class": "ganttview-grid-row" });
-			for (var y in dates) {
-				for (var m in dates[y]) {
-					for (var d in dates[y][m]) {
-						var cellDiv = jQuery("<div>", { "class": "ganttview-grid-row-cell" });
-						if (DateUtils.isWeekend(dates[y][m][d]) && showWeekends) {
+            let gridDiv = jQuery("<div>", { "class": "ganttview-grid" });
+            let rowDiv = jQuery("<div>", { "class": "ganttview-grid-row" });
+			for (let y of dates) {
+				if (y === undefined)
+					continue;
+				for (let m of y) {
+					for (let d of m) {
+						let cellDiv = jQuery("<div>", { "class": "ganttview-grid-row-cell" });
+						if (DateUtils.isWeekend(d) && showWeekends) {
 							cellDiv.addClass("ganttview-weekend");
 						}
 						rowDiv.append(cellDiv);
 					}
 				}
 			}
-            var w = jQuery("div.ganttview-grid-row-cell", rowDiv).length * slideWidth;
+            let w = jQuery("div.ganttview-grid-row-cell", rowDiv).length * this.opts.cellWidth;
             rowDiv.css("width", w + "px");
             gridDiv.css("width", w + "px");
-            for (var i = 0; i < data.length; i++) {
-                for (var j = 0; j < data[i].series.length; j++) {
+            for (let i = 0; i < data.length; i++) {
+                for (let j = 0; j < data[i].series.length; j++) {
                     gridDiv.append(rowDiv.clone());
                 }
             }
@@ -411,9 +433,9 @@ namespace JQueryGanttView {
 
 		private addBlockContainers() {
 			let data = this.opts.data;
-            var blocksDiv = jQuery("<div>", { "class": "ganttview-blocks" });
-            for (var i = 0; i < data.length; i++) {
-                for (var j = 0; j < data[i].series.length; j++) {
+            let blocksDiv = jQuery("<div>", { "class": "ganttview-blocks" });
+            for (let i = 0; i < data.length; i++) {
+                for (let j = 0; j < data[i].series.length; j++) {
                     blocksDiv.append(jQuery("<div>", { "class": "ganttview-block-container" }));
                 }
             }
@@ -424,38 +446,23 @@ namespace JQueryGanttView {
 			let data = this.opts.data;
 			let cellWidth = this.opts.cellWidth;
 			let start = this.start;
-            var rows = jQuery("div.ganttview-blocks div.ganttview-block-container", this.slideDiv);
-            var rowIdx = 0;
-            for (var i = 0; i < data.length; i++) {
-                for (var j = 0; j < data[i].series.length; j++) {
-                    var series = data[i].series[j];
-                    var size = DateUtils.daysBetween(series.start, series.end) + 1;
-					var offset = DateUtils.daysBetween(start, series.start);
-					var block = jQuery("<div>", {
-                        "class": "ganttview-block",
-                        "title": series.name + ", " + size + " days",
-                        "css": {
-                            "width": ((size * cellWidth) - 9) + "px",
-                            "margin-left": ((offset * cellWidth) + 3) + "px"
-                        }
-                    });
-                    this.addBlockData(block, data[i], series);
-                    if (data[i].series[j].color) {
-                        block.css("background-color", data[i].series[j].color);
-                    }
-                    block.append(jQuery("<div>", { "class": "ganttview-block-text" }).text(size));
+            let rows = jQuery("div.ganttview-blocks div.ganttview-block-container", this.slideDiv);
+            let rowIdx = 0;
+
+            for (let i = 0; i < data.length; i++) {
+                for (let j = 0; j < data[i].series.length; j++) {
+					let block = $("<div>", {class: "ganttview-block"});
+					block.append(jQuery("<div>", { "class": "ganttview-block-text" }).text("-"));
+					let blockBody = new GanttBlock(this, block, data[i].series[j]);
+
+					// This allows custom attributes to be added to the series data objects
+					// and makes them available to the 'data' argument of click, resize, and drag handlers
+					block.data("block-data", blockBody);
+					blockBody.updateBlock();
                     jQuery(rows[rowIdx]).append(block);
                     rowIdx = rowIdx + 1;
                 }
             }
-        }
-
-		private addBlockData(block: JQuery, data: GanttGroup, series: GanttElement) {
-			// This allows custom attributes to be added to the series data objects
-			// and makes them available to the 'data' argument of click, resize, and drag handlers
-			var blockData = { id: data.id, name: data.name };
-			jQuery.extend(blockData, series);
-			block.data("block-data", blockData);
         }
 
 		private applyLastClass(div) {
@@ -466,6 +473,53 @@ namespace JQueryGanttView {
 
 	}
 
+	export class GanttBlock {
+
+		public chart: Chart;
+
+		public block: JQuery;
+
+		public data: GanttElement;
+
+		constructor(chart: Chart, parts: JQuery, data: GanttElement) {
+			this.chart = chart;
+			this.block = parts;
+			this.data = data;
+		}
+
+		public updateBlock() {
+			let days = DateUtils.daysBetween(this.data.start, this.data.end) + 1;
+			let offset = DateUtils.daysBetween(this.chart.start, this.data.start);
+			this.block
+				.prop("title", this.data.titleText ? this.data.titleText(days) : (this.data.name + ", " + days + " days"))
+				.css("top", "")
+				.css("left", "")
+				.css("position", "relative")
+				.css("width", ((days * this.chart.opts.cellWidth) - 9) + "px")
+				.css("margin-left", offset * this.chart.opts.cellWidth + "px");
+				;
+			if (this.data.color) {
+				this.block.css("background-color", this.data.color);
+			}
+			this.block.find(".ganttview-block-text").html(this.data.labelHtml ? this.data.labelHtml(days) : days.toString());
+		}
+
+		public updateData() {
+			let scroll = this.chart.slideDiv.scrollLeft();
+			let width = this.block.outerWidth();
+			let offset = this.block.offset().left - this.chart.slideDiv.offset().left - 1 + scroll;
+
+			// Set new start date
+			let newStart = DateUtils.addDays(this.chart.start, Math.round(offset / this.chart.opts.cellWidth));
+			this.data.start = newStart;
+
+			// Set new end date
+			let numberOfDays = Math.round(width / this.chart.opts.cellWidth) - 1;
+			this.data.end = DateUtils.addDays(newStart, numberOfDays);
+		}
+
+	}
+
 	/**
 	 * Behavior
 	 */
@@ -473,112 +527,84 @@ namespace JQueryGanttView {
 
 		private dates: Duration;
 
-		private div: JQuery;
+		private container: JQuery;
 
 		private opts: JQueryGanttView.ChartOptions;
 
 		constructor(dates: Duration, div: JQuery, opts: JQueryGanttView.ChartOptions) {
 			this.dates = dates;
-			this.div = div;
+			this.container = div;
 			this.opts = opts;
 		}
 
 		public apply() {
 			let thiz = this;
-			let div = this.div;
+			let div = this.container;
 			let opts = this.opts;
 			let behavior = this.opts.behavior;
 			if (behavior.clickable) {
-				jQuery("div", this.div).on("click", ".ganttview-block", function (e) {
+				jQuery("div", this.container).on("click", ".ganttview-block", function (e) {
 					let block = jQuery(this);
-					let data: GanttElement = block.data("block-data");
-					let accept = !behavior.onClick || !!behavior.onClick(data, thiz, e);
-					if (!accept)
-						e.stopPropagation();
+					let gb = block.data("block-data") as GanttBlock;
+					let accept = !behavior.onClick || !!behavior.onClick(gb, thiz, e);
 				});
 			}
 
             if (behavior.resizable) {
-				jQuery("div .ganttview-block", this.div).resizable({
+				jQuery("div .ganttview-block", this.container).resizable({
 					grid: opts.cellWidth,
 					handles: "e,w",
+					// start: function (e, ui) {},
 					resize: function (e, ui) {
 						let block = jQuery(this);
-						let data: GanttElement = block.data("block-data");
-						let accept = !behavior.onResize || !!behavior.onResize(data, thiz, ui);
-						if (!accept) {
-							ui.position = ui.originalPosition;
-							ui.size = ui.originalSize;
-						} else {
-							thiz.updateDataAndPosition(block);
+						let gb = block.data("block-data") as GanttBlock;
+						let accept = !behavior.onResizing || !!behavior.onResizing(gb, thiz, ui);
+						
+						if (accept) {
+							// updates data from view
+							gb.updateData();
 						}
+						gb.updateBlock();
 					},
+					stop: function (e, ui) {
+						let block = jQuery(this);
+						let gb = block.data("block-data") as GanttBlock;
+						gb.updateData();
+						gb.updateBlock();
+					}
 				});
 			}
 
             if (behavior.draggable) {
-				jQuery("div .ganttview-block", this.div).draggable({
+				jQuery("div .ganttview-block", this.container).draggable({
 					axis: "x",
 					grid: [opts.cellWidth, opts.cellWidth],
 					drag: function (e, ui) {
 						let block = jQuery(this);
-						let data: GanttElement = block.data("block-data");
-						let accept = !behavior.onDrag || !!behavior.onDrag(data, thiz, ui);
+						let gb = block.data("block-data") as GanttBlock;
+						let accept = !behavior.onDragging || !!behavior.onDragging(gb, thiz, ui);
 
-						if (!accept) {
-							ui.position.left = thiz.daysToViewLength(DateUtils.millisecsToDays(data.start.getTime() - thiz.dates.start.getTime()));
-						} else {
-							thiz.updateDataAndPosition(block);
+						if (accept) {
+							// update data with view
+							gb.updateData();
 						}
+						gb.updateBlock();
 					},
+					stop: function (e, ui) {
+						let gb = $(this).data("block-data") as GanttBlock;
+						gb.updateData();
+						gb.updateBlock();
+					}
 				});
 			}
 		}
-
-		private offsetFor(block: JQuery) {
-			var container = jQuery("div.ganttview-slide-container", this.div);
-			var scroll = container.scrollLeft();
-			return block.offset().left - container.offset().left - 1 + scroll;
-		}
-
-		private viewLengthToDays(viewLength: number): number {
-			return viewLength / this.opts.cellWidth;
-		}
-
-		private daysToViewLength(days: number): number {
-			return days * this.opts.cellWidth;
-		}
-
-		private offsetToDate(offset: number): Date {
-			return DateUtils.addDays(this.dates.start, this.viewLengthToDays(offset));
-		}
-
-        private updateDataAndPosition(block: JQuery) {
-			var offset = this.offsetFor(block);
-
-			// Set new start date
-			let newStart = this.offsetToDate(offset);
-			block.data("block-data").start = newStart;
-
-			// Set new end date
-			var numberOfDays = Math.round(this.viewLengthToDays(block.outerWidth())) - 1;
-			let newEnd = DateUtils.addDays(newStart, numberOfDays);
-			block.data("block-data").end = DateUtils.addDays(newStart, numberOfDays);
-			jQuery("div.ganttview-block-text", block).text(numberOfDays + 1);
-			console.log(newStart + " - " + newEnd);
-
-			// Remove top and left properties to avoid incorrect block positioning,
-			// set position to relative to keep blocks relative to scrollbar when scrolling
-			block.css("top", "").css("left", "")
-				.css("position", "relative").css("margin-left", offset + "px");
-        }
 
 	}
 
     export class ArrayUtils {
 		public static contains<T>(arr: Array<T>, obj: T): boolean {
-			var has = false;
-            for (var i = 0; i < arr.length; i++) { if (arr[i] == obj) { has = true; } }
+			let has = false;
+            for (let i = 0; i < arr.length; i++) { if (arr[i] == obj) { has = true; } }
             return has;
 		}
 	}
@@ -589,11 +615,7 @@ namespace JQueryGanttView {
             if (!start || !end) { return 0; }
 			let s = start instanceof Date ? start : new Date(Date.parse(start));
 			let e = end instanceof Date ? end : new Date(Date.parse(end));
-			return Math.ceil((e.getTime() - s.getTime()) / (24 * 60 * 60 * 1000));
-            // if (s.getYear() == 1901 || s.getYear() == 8099) { return 0; }
-            // var count = 0, date = s.clone();
-            // while (date.compareTo(end) == -1) { count = count + 1; date.addDays(1); }
-            // return count;
+			return Math.ceil(DateUtils.millisecsToDays(e.getTime() - s.getTime()));
         }
 
 		public static isWeekend(date: Date) {
@@ -631,7 +653,7 @@ namespace JQueryGanttView {
 			dates[start.getFullYear()] = [];
 			dates[start.getFullYear()][start.getMonth()] = [start]
 			let last = start;
-			while (last == end) {
+			while (last < end) {
 				let next = DateUtils.addDays(last, 1);
 				if (!dates[next.getFullYear()]) { dates[next.getFullYear()] = []; }
 				if (!dates[next.getFullYear()][next.getMonth()]) {

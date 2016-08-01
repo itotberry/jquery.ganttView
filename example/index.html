@@ -32,17 +32,24 @@
 				data: ganttData,
 				slideWidth: 900,
 				behavior: {
+					// clickable: true,
+					// resizable: true,
+					// draggable: true,
 					onClick: function (data) { 
 						// var msg = "You clicked on an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
+						return true;
 					},
-					onResize: function (data) { 
+					onResizing: function (data) { 
 						// var msg = "You resized an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
+						console.log(data);
+						return true;
 					},
-					onDrag: function (data) { 
+					onDragging: function (data) { 
 						// var msg = "You dragged an event: { start: " + data.start.toString("M/d/yyyy") + ", end: " + data.end.toString("M/d/yyyy") + " }";
 						// $("#eventMessage").text(msg);
+						return true;
 					}
 				}
 			});
